@@ -1,0 +1,12 @@
+.idea/
+node_modules/
+dist/
+tasks/
+
+*~
+
+.serverless
+
+config
+
+.linc/

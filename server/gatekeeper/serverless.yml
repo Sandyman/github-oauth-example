@@ -1,0 +1,41 @@
+service: github-app-example
+
+provider:
+  name: aws
+  runtime: nodejs6.10
+  stage: ${opt:stage, self:custom.defaultStage}
+  region: us-east-1
+  memorySize: 128
+  timeout: 15
+  deploymentBucket: sls-depl-${self:provider.region}-${self:provider.stage}
+  environment:
+    CLIENT_ID: ${self:custom.clientId}
+    CLIENT_SECRET: ${self:custom.clientSecret}
+    WEBHOOK_SECRET: ${self:custom.webhookSecret}
+
+functions:
+  authenticate:
+    handler: index.authenticate
+    events:
+      - http:
+          path: oauth/authenticate
+          cors: true
+          method: get
+
+  webhook:
+    handler: index.webhook
+    events:
+      - http:
+          path: webhook
+          cors: true
+          method: post
+
+custom:
+  defaultStage: dev
+  profiles:
+    dev: development
+    prod: production
+  conf: ${file(../config/config-${self:provider.stage}.json)}
+  clientId: ${self:custom.conf.clientId}
+  clientSecret: ${self:custom.conf.clientSecret}
+  webhookSecret: ${self:custom.conf.webhookSecret}
