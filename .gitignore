@@ -7,6 +7,6 @@ tasks/
 
 .serverless
 
-config
+config-*.json
 
 .linc/
