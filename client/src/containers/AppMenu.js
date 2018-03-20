@@ -8,6 +8,7 @@ import { Menu, Dropdown, Icon } from 'semantic-ui-react';
 
 import popupWindow from '../util/openWindow';
 import * as userActions from '../actions/userActions';
+import { decode } from "jsonwebtoken";
 
 const getWindowOptions = () => {
   const windowArea = {
@@ -41,12 +42,13 @@ class AppMenu extends Component {
   }
 
   componentDidMount() {
-    let accessToken;
+    let jwtToken;
     if (sessionStorage) {
-      accessToken = sessionStorage.getItem('accessToken');
-    }
-    if (accessToken) {
-      this.props.userActions.getUserProfile(accessToken);
+      jwtToken = sessionStorage.getItem('jwtToken');
+      if (jwtToken) {
+        const claims = decode(jwtToken);
+        this.props.userActions.injectUser(claims);
+      }
     }
   }
 
@@ -65,6 +67,7 @@ class AppMenu extends Component {
     );
     popup
       .then(response => {
+        // console.log(response);
         const { code, state } = response;
         this.props.userActions.authoriseUser(code, state);
       })
@@ -78,7 +81,7 @@ class AppMenu extends Component {
   handleItemClick = (e, { name }) => this.setState({ activeItem: name });
 
   render() {
-    const { isAuthenticated, isInvalidated, isLoading, currentUser } = this.props;
+    const { isAuthenticated, isInvalidated, currentUser } = this.props;
     const { activeItem } = this.state;
 
     if (isInvalidated) {
@@ -88,7 +91,7 @@ class AppMenu extends Component {
     const trigger = (
       <span>
         <Icon name='user' />
-        {isAuthenticated ? currentUser.login : ''}
+        {isAuthenticated ? currentUser.name : ''}
       </span>);
 
     const loginButton = isAuthenticated ?
@@ -101,10 +104,8 @@ class AppMenu extends Component {
           </Dropdown.Menu>
         </Dropdown>
       </Menu.Item>
-      : isLoading ?
-        <Menu.Item>Loading...</Menu.Item>
-        :
-        <Menu.Item onClick={this.handleLogin.bind(this)}>Log in</Menu.Item>;
+      :
+      <Menu.Item onClick={this.handleLogin.bind(this)}>Log in</Menu.Item>;
 
     return (
       <Menu size="large" pointing>
@@ -121,14 +122,12 @@ class AppMenu extends Component {
 AppMenu.propTypes = {
   isAuthenticated: propTypes.bool,
   isInvalidated: propTypes.bool,
-  isLoading: propTypes.bool,
   currentUser: propTypes.object
 };
 
 const mapStateToProps = state => {
   const { user } = state;
   return {
-    isLoading: user.isLoading,
     isInvalidated: user.isInvalidated,
     isAuthenticated: user.isAuthenticated,
     currentUser: user.user

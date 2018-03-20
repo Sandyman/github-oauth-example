@@ -5,7 +5,6 @@ import { Provider } from 'react-redux';
 import { createStore, applyMiddleware, compose } from 'redux';
 
 import './index.css';
-import registerServiceWorker from './registerServiceWorker';
 
 import config from './linc.config.js';
 
@@ -27,4 +26,3 @@ render(
   </Provider>,
   document.getElementById('root')
 );
-registerServiceWorker();

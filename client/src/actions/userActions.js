@@ -1,10 +1,5 @@
 import * as ActionTypes from './userActionTypes';
-
-export const refreshUser = () => {
-  return {
-    type: ActionTypes.REFRESH,
-  };
-};
+import { decode}  from 'jsonwebtoken';
 
 export const requestUser = () => {
   return {
@@ -22,40 +17,11 @@ export const injectUser = (user = {}) => {
 };
 
 export const logoutUser = () => {
-  window.sessionStorage.removeItem('accessToken');
+  window.sessionStorage.removeItem('jwtToken');
 
   return {
     type: ActionTypes.LOGOUT
   }
-};
-
-export const getUserProfile = accessToken => dispatch => {
-  console.log('Fetching user profile');
-
-  const url = 'https://api.github.com/user';
-  const header = {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `token ${accessToken}`,
-    }
-  };
-  dispatch(requestUser());
-  return fetch(url, header)
-    .then(response => {
-      if (response.ok) {
-        response.json()
-          .then(json => {
-            console.log(json);
-            dispatch(injectUser(json))
-          });
-      } else if (response.status === 401) {
-        // Unauthorized. We need to restart the OAuth flow
-        dispatch(refreshUser());
-      } else {
-        dispatch(logoutUser());
-      }
-    })
 };
 
 export const authoriseUser = (code, state) => dispatch => {
@@ -71,9 +37,10 @@ export const authoriseUser = (code, state) => dispatch => {
     .then(response => {
       if (response.ok) {
         response.json().then(json => {
-          const accessToken = json.token;
-          sessionStorage.setItem('accessToken', accessToken);
-          return dispatch(getUserProfile(json.token));
+          const jwtToken = json.token;
+          const claims = decode(jwtToken);
+          sessionStorage.setItem('jwtToken', jwtToken);
+          return dispatch(injectUser(claims));
         })
       }
     })
