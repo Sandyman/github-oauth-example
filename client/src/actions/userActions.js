@@ -17,8 +17,20 @@ export const injectUser = (user = {}) => {
 };
 
 export const logoutUser = () => {
-  window.sessionStorage.removeItem('jwtToken');
 
+  const jwtToken = sessionStorage.getItem('jwtToken');
+  if (jwtToken) {
+    window.sessionStorage.removeItem('jwtToken');
+
+    const url = 'https://vvz5p9ifq0.execute-api.us-east-1.amazonaws.com/dev/logout';
+    const header = {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${jwtToken}`,
+      },
+    };
+    fetch(url, header).then(() => {});
+  }
   return {
     type: ActionTypes.LOGOUT
   }
