@@ -1,5 +1,6 @@
 import * as ActionTypes from './userActionTypes';
 import { decode }  from 'jsonwebtoken';
+import { apiEndpoint } from '../config-dev';
 
 export const requestUser = () => {
   return {
@@ -21,7 +22,7 @@ export const logoutUser = () => {
   if (jwtToken) {
     window.sessionStorage.removeItem('jwtToken');
 
-    const url = 'https://vvz5p9ifq0.execute-api.us-east-1.amazonaws.com/dev/logout';
+    const url = `${apiEndpoint}/logout`;
     const header = {
       method: 'GET',
       headers: {
@@ -36,7 +37,7 @@ export const logoutUser = () => {
 };
 
 export const authoriseUser = (code, state) => dispatch => {
-  const url = `https://vvz5p9ifq0.execute-api.us-east-1.amazonaws.com/dev/oauth/authenticate?code=${code}&state=${state}`;
+  const url = `${apiEndpoint}/oauth/authenticate?code=${code}&state=${state}`;
   const header = {
     method: 'GET',
     headers: {
