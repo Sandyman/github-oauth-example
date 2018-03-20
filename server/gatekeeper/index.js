@@ -1,12 +1,16 @@
-const AWS = require('aws-sdk');
+const jwt = require('jsonwebtoken');
+const moment = require('moment');
 const request = require('request');
+const users = require('./lib/users');
 const validSignature = require('./x-hub-signature');
 
 const clientId = process.env.CLIENT_ID;
 const clientSecret = process.env.CLIENT_SECRET;
+const jwtSecret = process.env.JWT_SECRET;
 const webhookSecret = process.env.WEBHOOK_SECRET;
 
 const accessUri = 'https://github.com/login/oauth/access_token';
+const userUri = 'https://api.github.com/user';
 
 /**
  * Request access token
@@ -36,6 +40,34 @@ const requestAccessToken = (code, state) => new Promise((resolve, reject) => {
 
     return resolve(body);
   });
+});
+
+/**
+ * Request user object
+ * @param accessToken
+ */
+const requestUserObject = accessToken => new Promise((resolve, reject) => {
+  const options = {
+    uri: userUri,
+    headers: {
+      Authorization: `Token ${accessToken}`,
+      Accept: 'application/vnd.github.v3+json',
+      'User-Agent': 'Sander Huijsen (sander.huijsen@gmail.com)',
+    },
+    json: true,
+  };
+  console.log(JSON.stringify(options, null, 2));
+  return request.get(options, (err, response, body) => {
+    if (err) return reject(err);
+    if (response.statusCode && response.statusCode !== 200) {
+      console.log(JSON.stringify(body, null, 3));
+      console.log(`Error: ${response.statusCode}: ${response.statusMessage}`);
+      return reject(new Error(response.statusMessage));
+    }
+
+    console.log(JSON.stringify(body, null, 3));
+    return resolve(body);
+  })
 });
 
 /**
@@ -71,26 +103,41 @@ const authenticate = (event, ctx, cb) => {
     return cb(null, response(400));
   }
 
+  let accessToken;
+
   console.log('Getting access token...');
   return requestAccessToken(code, state)
     .then(body => {
-      const accessToken = body.access_token;
-
+      accessToken = body.access_token;
       console.log(`Get access token: ${accessToken}`);
-
-        return cb(null, {
-          statusCode: 200,
-          body: JSON.stringify({
-            token: body.access_token,
-          }),
-          headers: {
-            'Access-Control-Allow-Credentials': true,
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET,OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type,Authorization',
-            'Content-Type': 'application/json'
-          }
-        })
+      return requestUserObject(accessToken);
+    })
+    .then(userObject => users.putItem({
+      accessToken,
+      id: userObject.id.toString(),
+      email: userObject.email,
+      username: userObject.login,
+      fullname: userObject.name,
+      avatarUrl: userObject.avatar_url,
+    }))
+    .then(user => {
+      const claims = {
+        iat: moment().unix(),
+        sub: user.id,
+        name: user.fullname,
+      };
+      const token = jwt.sign(claims, jwtSecret);
+      return cb(null, {
+        statusCode: 200,
+        body: JSON.stringify({ token }),
+        headers: {
+          'Access-Control-Allow-Credentials': true,
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET,OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type,Authorization',
+          'Content-Type': 'application/json'
+        }
+      })
     })
     .catch(e => {
       console.log(e);

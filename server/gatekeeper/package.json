@@ -9,8 +9,13 @@
   "author": "Sander Huijsen <sander.huijsen@gmail.com>",
   "license": "ISC",
   "dependencies": {
+    "jsonwebtoken": "^8.2.0",
+    "moment": "^2.21.0",
     "request": "^2.83.0",
     "secure-compare": "^3.0.1",
     "urlencode": "^1.1.0"
+  },
+  "devDependencies": {
+    "aws-sdk": "^2.211.1"
   }
 }

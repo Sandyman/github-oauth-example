@@ -8,9 +8,18 @@ provider:
   memorySize: 128
   timeout: 15
   deploymentBucket: sls-depl-${self:provider.region}-${self:provider.stage}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:PutItem
+        - dynamodb:GetItem
+      Resource: { "Fn::Join" : [ ":", [ "arn:aws:dynamodb:${self:provider.region}", { "Ref" : "AWS::AccountId" }, "table/${self:custom.userTable}" ] ] }
+
   environment:
     CLIENT_ID: ${self:custom.clientId}
     CLIENT_SECRET: ${self:custom.clientSecret}
+    JWT_SECRET: ${self:custom.jwtSecret}
+    USER_TABLE: ${self:custom.userTable}
     WEBHOOK_SECRET: ${self:custom.webhookSecret}
 
 functions:
@@ -21,6 +30,18 @@ functions:
           path: oauth/authenticate
           cors: true
           method: get
+
+  logout:
+    handler: index.logout
+    events:
+      - http:
+          path: logout
+          cors: true
+          method: get
+          authorizer: authorizer
+
+  authorizer:
+    handler: auth.authorizer
 
   webhook:
     handler: index.webhook
@@ -35,7 +56,10 @@ custom:
   profiles:
     dev: development
     prod: production
+  common: ${file(../config/common.json)}
   conf: ${file(../config/config-${self:provider.stage}.json)}
   clientId: ${self:custom.conf.clientId}
   clientSecret: ${self:custom.conf.clientSecret}
+  jwtSecret: ${self:custom.conf.jwtSecret}
+  userTable: ${self:custom.common.userTable}
   webhookSecret: ${self:custom.conf.webhookSecret}
