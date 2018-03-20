@@ -1,5 +1,5 @@
 import * as ActionTypes from './userActionTypes';
-import { decode}  from 'jsonwebtoken';
+import { decode }  from 'jsonwebtoken';
 
 export const requestUser = () => {
   return {
