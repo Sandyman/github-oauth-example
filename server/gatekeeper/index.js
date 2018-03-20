@@ -1,3 +1,4 @@
+const _ = require('underscore');
 const jwt = require('jsonwebtoken');
 const moment = require('moment');
 const request = require('request');
@@ -146,6 +147,25 @@ const authenticate = (event, ctx, cb) => {
 };
 
 /**
+ * Logout user
+ * @param event
+ * @param ctx
+ * @param cb
+ */
+const logout = (event, ctx, cb) => {
+  console.log(JSON.stringify(event, null, 3));
+
+  const principalId = event.requestContext.authorizer.principalId;
+  users.getItem(principalId)
+    .then(user => {
+      user = _.omit(user, 'accessToken');
+      return users.putItem(user)
+    })
+    .catch(() => {})
+    .then(() => cb(null, response(200)));
+};
+
+/**
  * Webhook callback for GitHub events
  * @param event
  * @param ctx
@@ -180,5 +200,6 @@ const webhook = (event, ctx, cb) => {
 
 module.exports = {
   authenticate,
+  logout,
   webhook
 };

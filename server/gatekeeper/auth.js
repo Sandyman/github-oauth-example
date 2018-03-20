@@ -26,7 +26,7 @@ const policy = {
  * @param context
  * @param callback
  */
-module.exports.authoriser = (event, context, callback) => {
+module.exports.authorizer = (event, context, callback) => {
   console.log(JSON.stringify(event, null, 3));
 
   const authToken = event.authorizationToken;

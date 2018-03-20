@@ -13,6 +13,7 @@
     "moment": "^2.21.0",
     "request": "^2.83.0",
     "secure-compare": "^3.0.1",
+    "underscore": "^1.8.3",
     "urlencode": "^1.1.0"
   },
   "devDependencies": {
